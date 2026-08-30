@@ -1,0 +1,52 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: vdm-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - HOST=0.0.0.0
+      - DB_PATH=/app/server/data/vdm.db
+      - DOWNLOAD_DIR=/app/server/downloads
+      - MAX_CONCURRENT=3
+      - CORS_ORIGIN=http://localhost:5173
+    volumes:
+      - vdm-data:/app/server/data
+      - vdm-downloads:/app/server/downloads
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - vdm-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: vdm-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=production
+    command: ["npx", "--prefix", "/app/client", "vite", "preview", "--host", "0.0.0.0", "--port", "5173"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - vdm-net
+
+volumes:
+  vdm-data:
+  vdm-downloads:
+
+networks:
+  vdm-net:
+    driver: bridge

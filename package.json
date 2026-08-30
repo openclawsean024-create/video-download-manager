@@ -1,0 +1,21 @@
+{
+  "name": "video-download-manager",
+  "version": "1.0.0",
+  "description": "Online Video Download Manager — unified web app for managing online video downloads across YouTube, Bilibili, Vimeo, X, TikTok, and Instagram.",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build": "npm --prefix server run build && npm --prefix client run build",
+    "start": "npm --prefix server run start",
+    "lint": "npm --prefix server run type-check && npm --prefix client run type-check"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
