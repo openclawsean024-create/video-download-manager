@@ -306,3 +306,4 @@ A: 进入设置页 → "下载设置" → "最大并发任务"，可选 1 / 2 / 
 ## 📜 License
 
 MIT — 仅供学习与合法用途使用。
+<!-- Last validated: 2026-09-06 by OpenClaw Overnight Dev -->
