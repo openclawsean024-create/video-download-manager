@@ -13,7 +13,8 @@
     "dev:client": "npm --prefix client run dev",
     "build": "npm --prefix server run build && npm --prefix client run build",
     "start": "npm --prefix server run start",
-    "lint": "npm --prefix server run type-check && npm --prefix client run type-check"
+    "lint": "npm --prefix server run type-check && npm --prefix client run type-check",
+    "test": "npm --prefix server run test"
   },
   "devDependencies": {
     "concurrently": "^9.0.1"

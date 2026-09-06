@@ -1,0 +1,99 @@
+# GitHub Actions CI — video-download-manager
+# 4 jobs: lint / test / build / deploy(none)
+# deploy 採 none：Express + better-sqlite3 + downloads/ 磁碟寫入不適用 Vercel/Pages
+# 正式部署請用 Docker（Dockerfile.server + docker-compose.yml）
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEPLOY_TARGET: none
+
+jobs:
+  lint:
+    name: Lint (type-check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      - name: Server type-check
+        run: npm --prefix server run type-check
+      - name: Client type-check
+        run: npm --prefix client run type-check
+
+  test:
+    name: Unit Tests (node --test + tsx)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      - name: Run server tests
+        run: npm --prefix server run test
+
+  build:
+    name: Build (server tsc + client vite)
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      - name: Server build
+        run: npm --prefix server run build
+      - name: Client build
+        run: npm --prefix client run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            server/dist/
+            client/dist/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    name: Deploy (skipped — use Docker)
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      - name: Verify build artifacts
+        run: |
+          test -d server/dist && echo "server dist OK" || echo "server dist missing"
+          test -d client/dist && echo "client dist OK" || echo "client dist missing"
+      - name: Deploy note
+        run: |
+          echo "::notice::Deploy target=none for this repo."
+          echo "::notice::Express + better-sqlite3 + downloads/ 磁碟寫入 → 請用 Docker:"
+          echo "::notice::   docker compose up -d"
+          echo "::notice::或部署到 Railway / Fly.io / 自架 VPS。"
